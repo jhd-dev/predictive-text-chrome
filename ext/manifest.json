@@ -20,6 +20,7 @@
         "<all_urls>"
       ],
       "js": [
+        "js/jquery-3.2.1.min.js",
         "src/inject/inject.js"
       ],
       "css": [
