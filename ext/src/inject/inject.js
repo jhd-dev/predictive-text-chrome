@@ -1,20 +1,33 @@
-$(document).ready(() => {
+(function($, getCaretCoordinates){
 
 	let $predictionList = $('<span id="prediction-list">hello</span>');
 
-	$('body').append($predictionList);
+	$(document).ready(() => {
 
-	$(':input').on({
-		focus(){
-			$predictionList.addClass('visible');
-		},
-		blur(){
-			$predictionList.removeClass('visible');
-		},
-		input(){
-			const oldValue = $(this).val();
-			$(this).val(oldValue);
-		}
-	})
+		$('body').append($predictionList);
 
-});
+		$(':input').on({
+			focus(){console.log('focus');
+				setTimeout(() => positionList($predictionList, this), 0);
+				$predictionList.addClass('visible');
+			},
+			blur(){
+				$predictionList.removeClass('visible');
+			},
+			input(){
+				const oldValue = $(this).val();
+				$(this).val(oldValue);
+			}
+		})
+
+	});
+
+	function positionList($list, textbox){
+		const caret = getCaretCoordinates(textbox, textbox.selectionEnd);
+		$list.css({
+			left: caret.left,
+			top: caret.top
+		});
+	}
+
+})($, getCaretCoordinates);

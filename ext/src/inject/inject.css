@@ -1,3 +1,9 @@
-/**
- * Place your custom CSS styles here.
- **/
+#prediction-list {
+	display: none;
+	position: absolute;
+	background-color: rgba(255, 255, 255, 0.7);
+}
+
+#prediction-list.visible {
+	display: block;
+}
