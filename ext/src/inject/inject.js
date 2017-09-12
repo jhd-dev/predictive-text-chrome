@@ -1,4 +1,9 @@
+'use strict';
+
 (function($, getCaretCoordinates){
+
+	const listOffsetX = 4;
+	const listOffsetY = 0;
 
 	let $predictionList = $('<span id="prediction-list">hello</span>');
 
@@ -8,8 +13,10 @@
 
 		$(':input').on({
 			focus(){console.log('focus');
-				setTimeout(() => positionList($predictionList, this), 0);
-				$predictionList.addClass('visible');
+				setTimeout(() => {
+					positionList($predictionList, this, listOffsetX, listOffsetY);
+					$predictionList.addClass('visible');
+				}, 0);
 			},
 			blur(){
 				$predictionList.removeClass('visible');
@@ -22,11 +29,12 @@
 
 	});
 
-	function positionList($list, textbox){
+	function positionList($list, textbox, offsetX, offsetY){
+		const rect = textbox.getBoundingClientRect();
 		const caret = getCaretCoordinates(textbox, textbox.selectionEnd);
 		$list.css({
-			left: caret.left,
-			top: caret.top
+			left: rect.left + window.scrollX - offsetX + caret.left,
+			top: rect.top + window.scrollY - offsetY + caret.top - caret.height
 		});
 	}
 
