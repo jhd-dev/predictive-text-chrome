@@ -2,7 +2,7 @@
 
 (function($, getCaretCoordinates){
 
-	const listOffsetX = 4;
+	const listOffsetX = 0;
 	const listOffsetY = 0;
 
 	let $predictionList = $('<span id="prediction-list">hello</span>');
@@ -12,7 +12,7 @@
 		$('body').append($predictionList);
 
 		$(':input').on({
-			focus(){console.log('focus');
+			focus(){
 				setTimeout(() => {
 					positionList($predictionList, this, listOffsetX, listOffsetY);
 					$predictionList.addClass('visible');
@@ -24,8 +24,16 @@
 			input(){
 				const oldValue = $(this).val();
 				$(this).val(oldValue);
+				updateListEntries($predictionList, getPossibleNextWords(oldValue));
+			},
+			keydown(e){
+				if (e.keyCode === 32){ //space
+					setTimeout(() => {
+						positionList($predictionList, this, listOffsetX, listOffsetY);
+					}, 0);
+				}
 			}
-		})
+		});
 
 	});
 
@@ -33,9 +41,20 @@
 		const rect = textbox.getBoundingClientRect();
 		const caret = getCaretCoordinates(textbox, textbox.selectionEnd);
 		$list.css({
-			left: rect.left + window.scrollX - offsetX + caret.left,
-			top: rect.top + window.scrollY - offsetY + caret.top - caret.height
+			left: rect.left + window.scrollX - offsetX + caret.left + 'px',
+			top: rect.top + window.scrollY - offsetY - $list.outerHeight() + caret.top + 'px'
 		});
+	}
+
+	function updateListEntries($list, words){
+		$list.empty();
+		words.forEach(word => {
+			$list.prepend($('<div class="prediction-entry">' + word + '</div>'));
+		});
+	}
+
+	function getPossibleNextWords(currentText){
+		return ['hello', 'how', 'are', 'you'];
 	}
 
 })($, getCaretCoordinates);
