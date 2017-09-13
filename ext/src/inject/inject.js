@@ -2,18 +2,82 @@
 
 (function($, getCaretCoordinates){
 
-	const wordsToShow = 4;
+	$(document).ready(() => new WordPredictionInterface().setupEvents());
 
-	const listOffsetX = 0;
-	const listOffsetY = 0;
+	class WordPredictionInterface {
 
-	const maxLocalStorageDepth = 2;
-	const maxSyncStorageDepth = 1;
+		constructor(){
+			this.baseWordCountNode = new WordCountNode();
+			this.possibleNextWords = [];
+			this.$predictionList = $('<span id="prediction-list"></span>');
+			this.seperatorChar = ' ';
+			this.wordsToShow = 4;
+			this.listOffsetX = 0;
+			this.listOffsetY = 0;
+			this.maxLocalStorageDepth = 2;
+			this.maxSyncStorageDepth = 1;
+		}
 
-	const seperatorChar = ' ';
+		setupEvents(){
+			let self = this;
+			$('body').append(self.$predictionList);
+			$(':input').on({
 
-	let $predictionList = $('<span id="prediction-list"></span>');
-	let possibleNextWords = [];
+				focus(){
+					setTimeout(() => {
+						self.positionList(this);
+						self.$predictionList.addClass('visible');
+					}, 0);
+				},
+
+				blur(){
+					self.$predictionList.removeClass('visible');
+				},
+
+				input(){
+					self.possibleNextWords = self.baseWordCountNode.getPossibleNextWords(self.splitIntoWords(this.value));
+					self.updateListEntries(self.possibleNextWords.slice(0, self.wordsToShow));
+				},
+
+				keydown(e){
+					if (e.keyCode === 32){ //space
+						setTimeout(() => {
+							self.positionList(this);
+						}, 0);
+						self.storeWordUsage(this.value);
+					}
+				}
+
+			});
+		}
+
+		positionList(textbox, offsetX = this.listOffsetX, offsetY = this.listOffsetY){
+			const rect = textbox.getBoundingClientRect();
+			const caret = getCaretCoordinates(textbox, textbox.selectionEnd);
+			this.$predictionList.css({
+				left: rect.left + window.scrollX - offsetX + caret.left + 'px',
+				top: rect.top + window.scrollY - offsetY - this.$predictionList.outerHeight() + caret.top + 'px'
+			});
+		}
+
+		updateListEntries(words){
+			this.$predictionList.empty();
+			words.forEach(word => {
+				this.$predictionList.prepend($('<div class="prediction-entry">' + word + '</div>'));
+			});
+		}
+
+		storeWordUsage(currentText){
+			let words = this.splitIntoWords(currentText);
+			const newWord = words.pop();
+			this.baseWordCountNode.addToCounts(newWord, words);
+		}
+
+		splitIntoWords(text){
+			return text.replace(/[^a-zA-Z0-9]+/g, this.seperatorChar).trim().toLowerCase().split(this.seperatorChar);
+		}
+
+	}
 
 	class WordCountNode {
 		
@@ -51,8 +115,8 @@
 			return nodes;
 		}
 
-		getPossibleNextWords(currentText){
-			let previousWords = splitIntoWords(currentText);
+		getPossibleNextWords(words){
+			let previousWords = words;
 			const currentWord = previousWords.pop();
 			let nextWords = [];
 			const wordCountNodes = this.getChildNodes(previousWords).reverse();
@@ -65,70 +129,6 @@
 			return [...new Set(nextWords)];
 		}
 
-	}
-
-	let baseWordCountNode = new WordCountNode();
-
-	$(document).ready(() => {
-
-		$('body').append($predictionList);
-
-		$(':input').on({
-
-			focus(){
-				setTimeout(() => {
-					positionList($predictionList, this, listOffsetX, listOffsetY);
-					$predictionList.addClass('visible');
-				}, 0);
-			},
-
-			blur(){
-				$predictionList.removeClass('visible');
-			},
-
-			input(){
-				possibleNextWords = baseWordCountNode.getPossibleNextWords(this.value);
-				updateListEntries($predictionList, possibleNextWords.slice(0, wordsToShow));
-			},
-
-			keydown(e){
-				if (e.keyCode === 32){ //space
-					setTimeout(() => {
-						positionList($predictionList, this, listOffsetX, listOffsetY);
-					}, 0);
-					storeWordUsage(this.value);
-				}
-			}
-
-		});
-
-	});
-
-	function positionList($list, textbox, offsetX, offsetY){
-		const rect = textbox.getBoundingClientRect();
-		const caret = getCaretCoordinates(textbox, textbox.selectionEnd);
-		$list.css({
-			left: rect.left + window.scrollX - offsetX + caret.left + 'px',
-			top: rect.top + window.scrollY - offsetY - $list.outerHeight() + caret.top + 'px'
-		});
-	}
-
-	function updateListEntries($list, words){
-		$list.empty();
-		words.forEach(word => {
-			$list.prepend($('<div class="prediction-entry">' + word + '</div>'));
-		});
-	}
-
-	function storeWordUsage(currentText){
-		let words = splitIntoWords(currentText);
-		const newWord = words.pop();
-		baseWordCountNode.addToCounts(newWord, words);
-		console.log(baseWordCountNode);
-	}
-
-	function splitIntoWords(text){
-		return text.replace(/[^a-zA-Z0-9]+/g, seperatorChar).trim().toLowerCase().split(seperatorChar);
 	}
 
 })($, getCaretCoordinates);
