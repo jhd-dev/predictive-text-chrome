@@ -2,6 +2,8 @@
 
 (function($, getCaretCoordinates){
 
+	const wordsToShow = 4;
+
 	const listOffsetX = 0;
 	const listOffsetY = 0;
 
@@ -10,7 +12,8 @@
 
 	const seperatorChar = ' ';
 
-	let $predictionList = $('<span id="prediction-list">hello</span>');
+	let $predictionList = $('<span id="prediction-list"></span>');
+	let possibleNextWords = [];
 
 	class WordCountNode {
 		
@@ -32,6 +35,34 @@
 				}
 				currentWordCountNode = currentWordCountNode.previousWords[word];
 			};
+		}
+
+		getChildNodes(words){
+			let nodes = [];
+			let currentWordCountNode = this;
+			for (let word of words){
+				nodes.push(currentWordCountNode);
+				if (typeof currentWordCountNode.previousWords[word] === 'undefined'){
+					break;
+				} else {
+					currentWordCountNode = currentWordCountNode.previousWords[word];
+				}
+			}
+			return nodes;
+		}
+
+		getPossibleNextWords(currentText){
+			let previousWords = splitIntoWords(currentText);
+			const currentWord = previousWords.pop();
+			let nextWords = [];
+			const wordCountNodes = this.getChildNodes(previousWords).reverse();
+			wordCountNodes.forEach(node => {
+				Object.keys(node.nextWordCounts)
+					.filter(word => word.substring(0, currentWord.length) === currentWord)
+					.sort((word1, word2) => node.nextWordCounts[word1] > node.nextWordCounts[word2])
+					.forEach(word => nextWords.push(word));
+			});
+			return [...new Set(nextWords)];
 		}
 
 	}
@@ -56,9 +87,8 @@
 			},
 
 			input(){
-				const oldValue = $(this).val();
-				$(this).val(oldValue);
-				updateListEntries($predictionList, getPossibleNextWords(oldValue));
+				possibleNextWords = baseWordCountNode.getPossibleNextWords(this.value);
+				updateListEntries($predictionList, possibleNextWords.slice(0, wordsToShow));
 			},
 
 			keydown(e){
@@ -90,12 +120,8 @@
 		});
 	}
 
-	function getPossibleNextWords(currentText){
-		return ['hello', 'how', 'are', 'you'];
-	}
-
 	function storeWordUsage(currentText){
-		let words = splitIntoWords(currentText);//console.log(currentText, words);
+		let words = splitIntoWords(currentText);
 		const newWord = words.pop();
 		baseWordCountNode.addToCounts(newWord, words);
 		console.log(baseWordCountNode);
